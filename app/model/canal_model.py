@@ -1,5 +1,5 @@
 from ..BaseDatos import DatabaseConnection
-
+global cursor,conn
 class Canal:
     def __init__(self, canal_id, server_id, nombre):
         self.canal_id = canal_id
@@ -29,7 +29,6 @@ class Canal:
             conn = DatabaseConnection.get_connection()
             cursor = conn.cursor()
             query = "INSERT INTO canales(serverID, nombre) VALUES (%s, %s)"
-            val=(servidor_id, nombre_canal)
             cursor.execute(query, (servidor_id, nombre_canal))
             conn.commit()
             #DatabaseConnection.insert_data(query, val)
@@ -38,5 +37,3 @@ class Canal:
             print("Error en crear canal",e)
             # Manejo de errores
             return False
-
-    # ...
