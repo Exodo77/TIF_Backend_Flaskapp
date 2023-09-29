@@ -9,6 +9,3 @@ servidor_bp.route('/unirse_a_servidor/<int:servidor_id>', methods=['POST'])(Serv
 servidor_bp.route('/crear_servidor', methods=['POST'])(ServidoresController.crear_servidor)
 #servidor_bp.route('/servidores/<int:servidor_id>', methods=['DELETE'])(ServidoresController.eliminar_servidor)
 servidor_bp.route('/obtener_servidores_usuario/<int:user_id>', methods=['GET'])(ServidoresController.obtener_servidores_usuario)
-
-
-
