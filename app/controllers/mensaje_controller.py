@@ -1,41 +1,109 @@
-# mensaje_controller.py
 from flask import request, jsonify
-from ..models.mensaje_model import Mensaje
-from ..models.auth.usuario_model import Usuario
+from ..models.servidores_model import Servidor
+from ..models.miembroservidor_model import MiembroServidor
+from ..models.canal_model import Canal
 
-class MensajeController:
+class ServidoresController:
+
     @classmethod
-    def obtener_mensajes(cls, canalID):
-        print(canalID)
-        print("Llegó hasta obtener mensajes")
-        mensajes=Mensaje.lista_mensaje(int(canalID))
-        if len(mensajes) >0:
-            # Formatear los mensajes en el formato deseado
-            formatted_messages = []
-            for mensaje in mensajes:
-                formatted_message = {
-                    "canalID": mensaje[0],
-                    "autor": Usuario.obtener_userName(mensaje[2]),  # Reemplaza con el nombre del autor si es necesario
-                    "contenido": mensaje[3],  # Reemplaza con el contenido del mensaje
-                    "fecha_envio": mensaje[4].strftime("%Y-%m-%d %H:%M:%S")
-                }
-                formatted_messages.append(formatted_message)
-                print(formatted_messages)
-            return jsonify(formatted_messages),200 # Devolvemos los mensajes como JSON
-        else:
-            lista=[{"canalID": 0, "autor": "servidor", "contenido": "Bienvenido comienza a mandar mensajes", "fecha_envio": "2023-09-25 19:14:02"}]
-            return jsonify(lista),200
+    def mostrar_todos_servidores(cls):
+        """MUESTRA TODOS LOS SERVIDORES CARGADOS EN LA BASE DE DATOS"""
+        try:
+            servidores = Servidor.obtener_todos_servidores()
+            servidores_serializados = [servidor.serialize() for servidor in servidores]
+            return jsonify(servidores_serializados), 200
+        except Exception as e:
+            print("Error en mostrar_todos_servidores:", e)
+            return {"mensaje": "Hubo un error en el servidor"}, 500
     
     @classmethod
-    def enviar_mensaje(cls):
-        print("Llego hasta enviar_mensaje")
-        data = request.json
-        canal_id = data.get('canal_id')
-        texto = data.get('texto')
-        user_id=data.get('user_id')
-        resul=Mensaje.crear_mensaje(canal_id,user_id,texto)
-        print(resul)
-        if resul:
-            return jsonify({'message': 'Mensaje enviado con éxito'}),200
-        else:
-            return jsonify({'message': 'Error al enviar el mensaje'}),500
+    def mostrar_servidor(cls, servidor_id):
+        """MUESTRA TODOS LOS SERVIDORES CARGADOS EN LA BASE DE DATOS"""
+        try:
+            servidor = Servidor.obtener_servidor_por_id(servidor_id)
+            if servidor:
+                servidor_serializado = servidor.serialize()
+                return jsonify(servidor_serializado), 200
+            else:
+                return {"mensaje": "Servidor no encontrado"}, 404
+        except Exception as e:
+            print("Error en mostrar_servidor:", e)
+            return {"mensaje": "Hubo un error en el servidor"}, 500
+
+    @classmethod
+    def crear_servidor(cls):
+        """CREA UN SERVIDOR"""
+        try:
+            data = request.json
+            nombre_servidor = data.get('nombre_servidor', '')
+            # Crear el servidor
+            created_server = Servidor.crear_servidor(nombre_servidor)
+            if created_server:
+                # Obtener el ID del servidor recién creado
+                server_id = created_server  # Reemplaza esto con la forma real de obtener el ID
+                # Obtener el ID del usuario actual, suponiendo que estás autenticado
+                user_id = data.get('user_id',None)
+                # Definir el rol para el creador del servidor (puedes ajustarlo según tus necesidades)
+                creador_rol_id = "creador"  # Reemplaza esto con el ID del rol "creador" en tu base de datos
+                # Crear el registro en miembroServidor
+                MiembroServidor.crear_miembro_servidor(user_id, server_id, creador_rol_id)
+                Canal.crear_canal(server_id,"bienvenida")
+                return {'message': 'Servidor creado con éxito'}, 201
+            else:
+                return {'message': 'No se pudo crear el servidor'}, 500
+        except Exception as e:
+            print("Error en crear_servidor:", e)
+            return {'message': 'Hubo un error en el servidor'}, 500
+
+    @classmethod
+    def eliminar_servidor(cls, servidor_id):
+        """ELIMINA UN SERVIDOR"""
+        try:
+            deleted_successfully = Servidor.eliminar_servidor(servidor_id)
+
+            if deleted_successfully:
+                return {"message": "Servidor eliminado correctamente"}, 204
+            else:
+                return {"message": "No se encontró el servidor o hubo un problema al eliminarlo"}, 404
+        except Exception as e:
+            print("Error en eliminar_servidor:", e)
+            return {"message": "Hubo un error en el servidor"}, 500
+    
+    @classmethod
+    def unirse_a_servidor(cls, servidor_id):
+        """UNE A UN USUARIO A UN SERVIDOR"""
+        print("Llego a unirse_servidor")
+        resul=0
+        try:
+        # Obtén los datos de la solicitud JSON
+            data = request.json
+            user_id = data.get('user_id', None)
+            print("SERVIDOR ID:", servidor_id, "USUARIO ID:", user_id)
+            resul = MiembroServidor.verificar_usuario(user_id, servidor_id)
+            print(resul)
+            if resul:
+                print("Error al unirse al servidor: Usuario ya registrado en el servidor.")
+                return {'message': 'El usuario ya está registrado en el servidor'}, 400
+            else:
+            # Verificar si el usuario se encuentra en la base de datos MiembroServidor con ese server_id
+            # Si no lo encuentra, lo agrega como miembro
+                if MiembroServidor.crear_miembro_servidor(user_id, servidor_id, "miembro"):
+                    return {'message': 'Usuario asignado al servidor con éxito'}, 200
+                else:
+                    return {'message': 'Hubo un error en el servidor'}, 500
+        except Exception as e:
+            print("Error al unirse al servidor:", str(e))
+            return {'message': 'Hubo un error en la solicitud'}, 500
+
+    @classmethod
+    def obtener_servidores_usuario(cls,user_id):
+        """OBTIENE LOS SERVIDORES DE UN USUARIO DADO SU ID"""
+        print("Llego asta obtener servidores usuario")
+        print(user_id)
+        servidores = MiembroServidor.obtener_servidores_del_usuario(user_id)
+        print(servidores)
+        # Luego, convierte la lista de servidores en un formato JSON
+        servidores_json = [{'nombre': servidor['nombre'], 'serverID': servidor['serverID']} for servidor in servidores]
+        # Devuelve la respuesta como JSON
+        print("Servidores del usuario:",servidores_json)
+        return jsonify(servidores_json), 200
