@@ -2,6 +2,8 @@ from ...BaseDatos import DatabaseConnection
 from passlib.hash import sha256_crypt
 from ..miembroservidor_model import MiembroServidor
 
+global cursor,conn
+
 class Usuario:
     def __init__(self, **kwargs):
         """Constructor de la clase Usuario. Recibe un conjunto de argumentos con nombre (**kwargs),
@@ -35,6 +37,7 @@ class Usuario:
 
     @staticmethod
     def iniciar_sesion(correo,contraseña):
+        """inicia sesion en la app"""
         try:
             conn = DatabaseConnection.get_connection()
             cursor = conn.cursor()
@@ -58,12 +61,12 @@ class Usuario:
         
     @staticmethod
     def registrar_usuario(nombreusuario, nombre, apellido, correo, contraseña, fecha_nacimiento, imagen=None):
+        """registra un usuario"""
         # Hashea la contraseña antes de almacenarla en la base de datos
         contraseña = sha256_crypt.hash(contraseña)
         try:
             conn = DatabaseConnection.get_connection()
             cursor = conn.cursor()
-
             query = "INSERT INTO usuario(nombreusuario, nombre, apellido, correo, contraseña, fecha_nacimiento, imagen) VALUES (%s, %s, %s, %s, %s, %s, %s)"
             cursor.execute(query, (nombreusuario, nombre, apellido, correo, contraseña, fecha_nacimiento, imagen))
             conn.commit()
@@ -74,6 +77,7 @@ class Usuario:
     
     @staticmethod
     def obtener_usuario_por_correo(correo):
+        """Obtiene los datos de un usuario dado su correo"""
         try:
             conn = DatabaseConnection.get_connection()
             cursor = conn.cursor()
@@ -128,58 +132,16 @@ class Usuario:
         return False
 
     @classmethod
-    def get(cls, user):
-        """Obtener información detallada de un usuario en la base de datos basándose en su nombre de usuario 'nombreusuario'."""
-
-        query = """SELECT * FROM usuario WHERE nombreusuario = %(nombreusuario)s"""
-        params = user.__dict__
-        result = DatabaseConnection.fetch_one(query, params=params)
-
-        if result is not None:
-            return cls(
-                userID=result[0],
-                nombreusuario=result[1],
-                nombre=result[2],
-                apellido=result[3],
-                correo=result[4],
-                contraseña=result[5],
-                fecha_nacimiento=result[6],
-                imagen=result[7]
-            )
-        return None
-
-    @classmethod
-    def create_usuario(cls, usuario):
-        """Insertar un nuevo usuario en la base de datos."""
-        
-        query = """INSERT INTO usuario (nombreusuario, nombre, apellido, correo, contraseña, fecha_nacimiento, imagen) 
-        VALUES (%(nombreusuario)s, %(nombre)s, %(apellido)s, %(correo)s, %(contraseña)s, %(fecha_nacimiento)s, %(imagen)s);"""
-
-        params = usuario.__dict__
-
-        result = DatabaseConnection.execute_query(query, params=params)
-
-        if result:
-            return True
-        else:
-            return False
-
-    @classmethod
-    def update_usuario(cls, usuario):
-        """Modifica un usuario existente en la base de datos."""
-
-        query = """UPDATE usuario SET nombre = %(nombre)s, apellido = %(apellido)s, correo = %(correo)s, 
-                   contraseña = %(contraseña)s, fecha_nacimiento = %(fecha_nacimiento)s, imagen = %(imagen)s 
-                   WHERE nombreusuario = %(nombreusuario)s"""
-
-        params = usuario.__dict__
-
-        result = DatabaseConnection.execute_query(query, params=params)
-
-        if result:
-            return True
-        else:
-            return False
+    def get(cls, usuario_id):
+        """Obtener información detallada de un usuario en la base de datos basándose en su id de usuario 'userID'."""
+        conn = DatabaseConnection.get_connection()
+        cursor = conn.cursor()
+        query = "SELECT * FROM usuario WHERE userID = %s"
+        cursor.execute(query, (usuario_id,))
+        usuario= cursor.fetchall()
+        usuario=usuario[0]
+        print(usuario)
+        return usuario
 
     @classmethod
     def delete_usuario(cls, nombreusuario):
@@ -208,6 +170,7 @@ class Usuario:
 
     @classmethod
     def obtener_servidores_del_usuario(cls, usuario_id):
+        """retorna los servidores donde esta registrado el usuario"""
         try:
             # Utiliza la función obtener_servidores_del_usuario de MiembroServidor
             servidores = MiembroServidor.obtener_servidores_del_usuario(usuario_id)
@@ -216,5 +179,57 @@ class Usuario:
         except Exception as e:
             print("Error en obtener_servidores_del_usuario de Servidor:", e)
             return []
-    
-    
+        
+    @classmethod
+    def modificar_dato(cls, user_id, campo, nuevo_valor):
+        """Modifica un dato específico de un usuario en la base de datos."""
+        try:
+            conn = DatabaseConnection.get_connection()
+            cursor = conn.cursor()
+            # Asegúrate de que el campo proporcionado sea válido para evitar inyección SQL
+            campos_validos = ['nombreusuario','nombre', 'apellido', 'correo', 'contraseña', 'fecha_nacimiento', 'imagen']
+            if campo not in campos_validos:
+                return False  # El campo no es válido
+            else:
+                query = f"UPDATE usuario SET {campo} = %s WHERE userID = %s"
+                cursor.execute(query, (nuevo_valor, user_id))
+                conn.commit()
+
+                # Verifica si se realizó la actualización
+                if cursor.rowcount > 0:
+                    return True  # La actualización se realizó con éxito
+                else:
+                    return False  # No se actualizó ningún registro (usuario no encontrado)
+        except Exception as e:
+            print("Error al realizar las modificaciones en la base de datos:", e)
+            return False
+        
+
+    @classmethod
+    def verifircar_contraseña(cls,actual,user_id):
+        """verifica la contraseña"""
+        try:
+            conn = DatabaseConnection.get_connection()
+            cursor = conn.cursor()
+            query = "SELECT contraseña FROM usuario WHERE userID = %s"
+            cursor.execute(query, (user_id,))
+            contra= cursor.fetchone()
+            print(contra)
+            if contra and sha256_crypt.verify(actual, contra[0]):return True
+            else:return False
+        except Exception as e:
+            print("No se pudo verificar la contraseña")
+            return False
+    @classmethod   
+    def obtener_userName(cls,user_id):
+        """retorna el nombre de usuario de un Usuario"""
+        try:
+            conn = DatabaseConnection.get_connection()
+            cursor = conn.cursor()
+            query = "SELECT nombreusuario FROM usuario WHERE userID = %s"
+            cursor.execute(query, (user_id,))
+            contra= cursor.fetchone()
+            return contra
+        except Exception as e:
+            print("No se pudo obtener el username")
+            return False
