@@ -7,6 +7,7 @@ class ServidoresController:
 
     @classmethod
     def mostrar_todos_servidores(cls):
+        """MUESTRA TODOS LOS SERVIDORES CARGADOS EN LA BASE DE DATOS"""
         try:
             servidores = Servidor.obtener_todos_servidores()
             servidores_serializados = [servidor.serialize() for servidor in servidores]
@@ -17,9 +18,9 @@ class ServidoresController:
     
     @classmethod
     def mostrar_servidor(cls, servidor_id):
+        """MUESTRA TODOS LOS SERVIDORES CARGADOS EN LA BASE DE DATOS"""
         try:
             servidor = Servidor.obtener_servidor_por_id(servidor_id)
-
             if servidor:
                 servidor_serializado = servidor.serialize()
                 return jsonify(servidor_serializado), 200
@@ -31,6 +32,7 @@ class ServidoresController:
 
     @classmethod
     def crear_servidor(cls):
+        """CREA UN SERVIDOR"""
         try:
             data = request.json
             nombre_servidor = data.get('nombre_servidor', '')
@@ -55,6 +57,7 @@ class ServidoresController:
 
     @classmethod
     def eliminar_servidor(cls, servidor_id):
+        """ELIMINA UN SERVIDOR"""
         try:
             deleted_successfully = Servidor.eliminar_servidor(servidor_id)
 
@@ -68,6 +71,7 @@ class ServidoresController:
     
     @classmethod
     def unirse_a_servidor(cls, servidor_id):
+        """UNE A UN USUARIO A UN SERVIDOR"""
         print("Llego a unirse_servidor")
         resul=0
         try:
@@ -93,38 +97,13 @@ class ServidoresController:
 
     @classmethod
     def obtener_servidores_usuario(cls,user_id):
+        """OBTIENE LOS SERVIDORES DE UN USUARIO DADO SU ID"""
         print("Llego asta obtener servidores usuario")
         print(user_id)
         servidores = MiembroServidor.obtener_servidores_del_usuario(user_id)
         print(servidores)
         # Luego, convierte la lista de servidores en un formato JSON
         servidores_json = [{'nombre': servidor['nombre'], 'serverID': servidor['serverID']} for servidor in servidores]
-        #print("Servidores del usuario",servidores_json)
         # Devuelve la respuesta como JSON
+        print("Servidores del usuario:",servidores_json)
         return jsonify(servidores_json), 200
-    
-    @classmethod
-    def obtener_mensajes(cls,chanel_id):
-        print(chanel_id)
-        print("Llego hasta obtener mensajes")
-        try:
-            # Supongamos que aquí conectas a tu base de datos y consultas los mensajes del canal correspondiente
-            # messages = consulta_a_la_base_de_datos(chanel_id)
-        
-            # Por ahora, usemos datos de ejemplo
-            messages = [
-                {"mensaje_id": 1, "autor": "robin", "contenido": "Hola", "fecha_envio": "2023-09-25 19:14:02"},
-                {"mensaje_id": 2, "autor": "alice", "contenido": "Hola de nuevo", "fecha_envio": "2023-09-25 19:15:20"},
-            # Agrega más mensajes si es necesario
-            ]
-
-            return messages
-        except Exception as e:
-        # Manejo de errores
-            return jsonify({'message': 'Error al obtener los mensajes del canal'}), 500
-        #try:
-        #    mensajes=Servidor.obtener_mensajes(chanel_id)
-        #    return jsonify({'mensajes': mensajes}), 200
-        #except Exception as e:
-        # Manejo de errores
-        #    return jsonify({'message': 'Error al obtener los mensajes del canal'}), 500
