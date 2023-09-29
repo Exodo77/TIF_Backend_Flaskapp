@@ -1,9 +1,13 @@
 # miembro_servidor_model.py
 from ..BaseDatos import DatabaseConnection
 from ..models.servidores_model import Servidor
+global cursor,conn
+
+
 class MiembroServidor:
     @classmethod
     def crear_miembro_servidor(cls, usuario_id, servidor_id, rol):
+        """Carga un servdor y usuario en la tabla miembro servidor"""
         try:
             conn = DatabaseConnection.get_connection()
             cursor = conn.cursor()
@@ -17,6 +21,7 @@ class MiembroServidor:
     # Otros métodos del modelo MiembroServidor si es necesario
     @classmethod
     def obtener_servidores_del_usuario(cls, usuario_id):
+        """Obtiene los servidores de un usuario dado su id"""
         try:
             conn = DatabaseConnection.get_connection()
             cursor = conn.cursor()
