@@ -1,6 +1,7 @@
 from ..BaseDatos import DatabaseConnection  # Importa tu clase de conexión a la base de datos
 from .canal_model import Canal
 from .mensaje_model import Mensaje
+global cursor,conn
 
 class Servidor:
     def __init__(self, serverID, cantUser, nombre):
@@ -10,6 +11,7 @@ class Servidor:
 
     @classmethod
     def crear_servidor(cls, nombre_servidor):
+        """Carga un nuevo registro de servidor en la tabla"""
         try:
             query = "INSERT INTO servidor (nombre, cantUser) VALUES (%s, %s)"  # Agrega un valor predeterminado para cantUser
             val=(nombre_servidor, 1)
@@ -23,6 +25,7 @@ class Servidor:
 
     @classmethod
     def obtener_todos_servidores(cls):
+        """Obtiene los datos de todos los servidores"""
         try:
             conn = DatabaseConnection.get_connection()
             cursor = conn.cursor()
@@ -36,6 +39,7 @@ class Servidor:
 
     @classmethod
     def obtener_servidor_por_id(cls, servidor_id):
+        """Obtiene los datos de un servidor dado su id"""
         try:
             conn = DatabaseConnection.get_connection()
             cursor = conn.cursor()
@@ -52,6 +56,7 @@ class Servidor:
 
     @classmethod
     def eliminar_servidor(cls, servidor_id):
+        """Elimina un servidor dado su id"""
         try:
             conn = DatabaseConnection.get_connection()
             cursor = conn.cursor()
@@ -72,6 +77,7 @@ class Servidor:
     
     @classmethod
     def asignar_usuario(cls, servidor_id, usuario_id, rol_id):
+        """Carga un nuevo registro de servidor en la tabla"""
         try:
             query = "INSERT INTO usuarioservidor (usuario_id, servidor_id, rolID) VALUES (%s, %s, %s)"
             val=(usuario_id, servidor_id, rol_id)
@@ -80,15 +86,3 @@ class Servidor:
         except Exception as e:
             print("Error al asignar usuario al servidor:", e)
             return False
-
-    @classmethod
-    def agregar_canal(cls,servidor_id,nombre_canal):
-        print("Llego a servidor_model")
-        #Canal(1,servidor_id,nombre_canal)
-        resul = Canal.crear_canal(servidor_id, nombre_canal)
-        return resul
-    
-    @classmethod
-    def obtener_mensajes(cls,chanel_id):
-        lista=Mensaje.lista_mensaje(chanel_id)
-        return lista
